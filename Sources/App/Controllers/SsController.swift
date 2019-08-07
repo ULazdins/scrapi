@@ -22,9 +22,6 @@ struct OtherParameter {
     var attributeSelectors: [String: String]
 }
 extension OtherParameter: Content { }
-//extension OtherParameter: Parameter {
-//    typealias ResolvedParameter = <#type#>
-//}
 
 final class SsController {
     func other(_ req: Request) throws -> Future<[[String: String]]> {
@@ -53,7 +50,15 @@ final class SsController {
     
     private func parseListItem(element: Element, attributeSelectors: [String: String]) -> [String: String] {
         let aa = attributeSelectors.map({ key, value -> (String, String) in
-            return (key, (try? element.select(value).text()) ?? "[Error]")
+            let p = value.split(separator: "|")
+            let selector = String(p.first!)
+            let shouldReadAttrValue = p.count > 1 && p[1] != "text"
+            
+            let elem = try? element.select(selector)
+            let value: String? = elem.flatMap({ (elem) -> String? in
+                return try? shouldReadAttrValue ? elem.attr(String(p[1])) : elem.text()
+            })
+            return (key, (value ?? "[Error]"))
         })
         
         return Dictionary(uniqueKeysWithValues: aa)
