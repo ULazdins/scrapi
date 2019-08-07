@@ -14,9 +14,8 @@ struct AdHeader: Codable {
     var title: String
 }
 extension AdHeader: Content { }
-//extension AdHeader: Parameter { }
 
-struct OtherParameter {
+struct OtherParameter: Codable {
     var url: String
     var listSelector: String
     var attributeSelectors: [String: String]?
