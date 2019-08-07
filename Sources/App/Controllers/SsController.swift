@@ -9,12 +9,6 @@ import Vapor
 import CoreFoundation
 import SwiftSoup
 
-struct AdHeader: Codable {
-    var url: String
-    var title: String
-}
-extension AdHeader: Content { }
-
 struct OtherParameter: Codable {
     var url: String
     var listSelector: String
@@ -64,31 +58,6 @@ final class SsController {
         })
         
         return Dictionary(uniqueKeysWithValues: aa)
-    }
-    
-    func index(_ req: Request) throws -> Future<[AdHeader]> {
-        return getData(req, url: URL(string: "https://www.ss.com/lv/real-estate/flats/riga/all/")!)
-            .map { (html) -> ([AdHeader]) in
-                do {
-                    let doc: Document = try SwiftSoup.parse(html)
-                    
-                    let res: Elements? = try? doc.select("#filter_frm table[align=center] tr")
-                    let e: [Element] = Array(res!.dropFirst().dropLast())
-                    
-                    return e.map({ (e) -> AdHeader in
-                        let cols = e.children()
-                        let url: String = try! cols.get(1).getElementsByTag("a").first()!.attr("href")
-                        let title = try! cols.get(2).text()
-                        return AdHeader(url: url, title: title)
-                    })
-                } catch Exception.Error(let type, let message) {
-                    print(message)
-                } catch {
-                    print("error")
-                }
-                
-                return []
-            }
     }
     
     private func getData(_ req: Request, url: URL) -> Future<String> {
