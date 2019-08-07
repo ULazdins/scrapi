@@ -19,5 +19,6 @@ public func routes(_ router: Router) throws {
     router.delete("todos", Todo.parameter, use: todoController.delete)
     
     let ssController = SsController()
-    router.post("other", use: ssController.other)
+    router.post("getList", use: ssController.getList)
+    router.post("getObject", use: ssController.getObject)
 }

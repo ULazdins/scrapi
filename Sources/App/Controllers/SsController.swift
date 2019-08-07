@@ -16,8 +16,26 @@ struct OtherParameter: Codable {
 }
 extension OtherParameter: Content { }
 
+struct GetObjectParameter: Codable {
+    var url: String
+    var attributeSelectors: [String: String]
+}
+extension GetObjectParameter: Content { }
+
 final class SsController {
-    func other(_ req: Request) throws -> Future<[[String: String]]> {
+    func getObject(_ req: Request) throws -> Future<[String: String]> {
+        return (try! req.content.decode(GetObjectParameter.self))
+            .flatMap { (params) -> EventLoopFuture<[String: String]> in
+                return self.getData(req, url: URL(string: params.url)!)
+                    .map({ (html) -> ([String: String]) in
+                        let doc: Document = try! SwiftSoup.parse(html)
+                        
+                        return self.parseListItem(element: doc.body()!, attributeSelectors: params.attributeSelectors)
+                    })
+        }
+    }
+    
+    func getList(_ req: Request) throws -> Future<[[String: String]]> {
         return (try! req.content.decode(OtherParameter.self))
             .flatMap { (params) -> EventLoopFuture<[[String: String]]> in
                 return self.getData(req, url: URL(string: params.url)!)
@@ -41,18 +59,39 @@ final class SsController {
         })
     }
     
+    enum ValueReader {
+        case text
+        case html
+        case attribute(String)
+    }
+    
     private func parseListItem(element: Element, attributeSelectors: [String: String]) -> [String: String] {
         let aa = attributeSelectors.map({ key, value -> (String, String) in
             let p = value.split(separator: "|")
             let selector = String(p.first!)
-            var valueReader: String? = p.count > 1 ? p[1].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) : nil
-            if valueReader == "text" {
-                valueReader = nil
+            var valueReaderStr: String? = p.count > 1 ? p[1].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) : nil
+            var valueReader = ValueReader.text
+            if valueReaderStr == "text" {
+                valueReader = .text
+            } else if valueReaderStr == "html" {
+                valueReader = .html
+            } else if let valueReaderStr = valueReaderStr {
+                valueReader = .attribute(valueReaderStr)
             }
             
             let elem = try? element.select(selector)
+            if elem?.size() ?? 0 > 1 {
+                return (key, "[Too many]")
+            }
             let value: String? = elem.flatMap({ (elem) -> String? in
-                return try? valueReader.map(elem.attr) ?? elem.text()
+                switch valueReader {
+                case .text:
+                    return try? elem.text()
+                case .html:
+                    return try? elem.html()
+                case .attribute(let attr):
+                    return try? elem.attr(attr)
+                }
             })
             return (key, (value ?? "[Error]"))
         })
