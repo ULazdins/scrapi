@@ -19,7 +19,7 @@ extension AdHeader: Content { }
 struct OtherParameter {
     var url: String
     var listSelector: String
-    var attributeSelectors: [String: String]
+    var attributeSelectors: [String: String]?
 }
 extension OtherParameter: Content { }
 
@@ -32,7 +32,7 @@ final class SsController {
                         return self.transformHtml(
                             html,
                             listSelector: params.listSelector,
-                            attributeSelectors: params.attributeSelectors
+                            attributeSelectors: params.attributeSelectors ?? [:]
                         )
                     })
             }
@@ -52,11 +52,14 @@ final class SsController {
         let aa = attributeSelectors.map({ key, value -> (String, String) in
             let p = value.split(separator: "|")
             let selector = String(p.first!)
-            let shouldReadAttrValue = p.count > 1 && p[1] != "text"
+            var valueReader: String? = p.count > 1 ? p[1].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) : nil
+            if valueReader == "text" {
+                valueReader = nil
+            }
             
             let elem = try? element.select(selector)
             let value: String? = elem.flatMap({ (elem) -> String? in
-                return try? shouldReadAttrValue ? elem.attr(String(p[1])) : elem.text()
+                return try? valueReader.map(elem.attr) ?? elem.text()
             })
             return (key, (value ?? "[Error]"))
         })
