@@ -9,7 +9,7 @@ import Vapor
 import CoreFoundation
 import SwiftSoup
 
-struct AdHeader {
+struct AdHeader: Codable {
     var url: String
     var title: String
 }
@@ -94,9 +94,9 @@ final class SsController {
     
     private func getData(_ req: Request, url: URL) -> Future<String> {
         let promise = req.eventLoop.newPromise(String.self)
-        let r = NSURLRequest(url: url)
+        let r = URLRequest(url: url)
         
-        let task = URLSession.shared.dataTask(with: r as URLRequest) { (data, response, error) in
+        let task = URLSession.shared.dataTask(with: r) { (data, response, error) in
             if let error = error {
 //                print("<--", error.localizedDescription)
                 promise.fail(error: error)
