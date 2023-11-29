@@ -8,5 +8,6 @@ public func routes(_ app: Application) throws {
     }
     
     let scraperController = ScraperController()
-    app.get("scrape", use: scraperController.parseFromUrl)
+    app.get("scrape", use: scraperController.parseFromUrl(_:))
+    app.post("scrape", use: scraperController.parseFromUrlPost(_:))
 }

@@ -8,23 +8,26 @@ struct Err: Error {
 
 extension Value {
     func extract(from element: Element) throws -> any Codable {
-        let text = try element.text()
-        
         switch self {
         case .string:
+            let text = try element.text()
             return text
         case .number:
+            let text = try element.text()
             if let n = Double(text) {
                 return n
             }
             throw Err(message: "Not a number")
         case .bool:
+            let text = try element.text()
             if text == "true" {
                 return true
             } else if text == "false" {
                 return false
             }
             throw Err(message: "Not a boolean")
+        case .attribute(let attributeName):
+            return try element.attr(attributeName)
         }
     }
 }
@@ -37,7 +40,10 @@ public func extractor(from element: Element, selector: Schema, canBeMany: Bool =
         let childElement = try element.select(selector)
         
         if childElement.count > 1 {
-            throw Err(message: "too many!")
+            throw Err(message: "too many elements match \(selector)")
+        } else if childElement.isEmpty() {
+            return "whoopsie"
+//            throw Err(message: "no element matches \(selector)")
         }
         
         return try extractor(from: childElement[0], selector: childSchema)
@@ -48,5 +54,11 @@ public func extractor(from element: Element, selector: Schema, canBeMany: Bool =
             }
         
         return withValues
+    case .array(let itemSelector, let childSchema):
+        let itemChildren = try element.select(itemSelector)
+        
+        return try itemChildren.map { child in
+            AnyCodable(try extractor(from: child, selector: childSchema))
+        }
     }
 }

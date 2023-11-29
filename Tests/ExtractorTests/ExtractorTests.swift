@@ -88,23 +88,51 @@ final class ExtractorTests: XCTestCase {
         XCTAssertEqual(result.toString(), "\"Hello\"")
     }
     
-//    func testList() throws {
-//        let html = """
-//        <li>
-//            <ul>Elem1</ul>
-//            <ul>Elem2</ul>
-//            <ul>Elem3</ul>
-//        </li>
-//        """
-//        let soup = try SwiftSoup.parse(html)
-//        
-//        let result = try extractor(from: soup, selector: "li -> [ul: string]")
-//        
-//        XCTAssertEqual(
-//            result,
-//            """
-//            ["Elem1", "Elem2", "Elem3"]
-//            """
-//        )
-//    }
+    func testList() throws {
+        let html = """
+        <li>
+            <ul>Elem1</ul>
+            <ul>Elem2</ul>
+            <ul>Elem3</ul>
+        </li>
+        """
+        let soup = try SwiftSoup.parse(html)
+        
+        let result = try extractor(from: soup, selector: .selector("li", .array("ul", .value(.string))))
+        
+        XCTAssertEqual(
+            result.toString(),
+            """
+            ["Elem1","Elem2","Elem3"]
+            """
+        )
+    }
+    
+    func testListToObject() throws {
+        let html = """
+        <li>
+            <ul>Elem1</ul>
+            <ul>Elem2</ul>
+            <ul>Elem3</ul>
+        </li>
+        """
+        let soup = try SwiftSoup.parse(html)
+        
+        let result = try extractor(
+            from: soup,
+            selector: .selector(
+                "li",
+                .object([
+                    "Row1": .selector("ul:nth-child(1)", .value(.string))
+                ])
+            )
+        )
+        
+        XCTAssertEqual(
+            result.toString(),
+            """
+            {"Row1":"Elem1"}
+            """
+        )
+    }
 }

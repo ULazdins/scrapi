@@ -12,6 +12,16 @@ final class ScraperController {
     func parseFromUrl(_ req: Request) async throws -> String {
         let params = try req.query.decode(ParseRequest.self)
         
+        return try await handleParseRequest(params)
+    }
+    
+    func parseFromUrlPost(_ req: Request) async throws -> String {
+        let params = try req.content.decode(ParseRequest.self)
+        
+        return try await handleParseRequest(params)
+    }
+    
+    private func handleParseRequest(_ params: ParseRequest) async throws -> String {
         var url = URL(string: params.url)!
         url = url.addHTTPSScheme()
         
